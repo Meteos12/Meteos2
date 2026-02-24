@@ -3,331 +3,238 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>シール業務ツール</title>
-
+<title>シール計算ツール</title>
 <style>
 body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#111;
-  color:#fff;
-}
-
-header{
   padding:16px;
-  text-align:center;
-  font-size:20px;
-  font-weight:bold;
-  background:#000;
+  background:#f5f5f5;
 }
-
+h2{margin:8px 0;}
+input[type="number"]{
+  width:100%;
+  padding:10px;
+  font-size:16px;
+  margin:6px 0 12px 0;
+  box-sizing:border-box;
+}
 .tabs{
   display:flex;
+  margin-bottom:12px;
 }
-
 .tab{
   flex:1;
-  padding:14px;
   text-align:center;
+  padding:10px;
+  background:#ddd;
   cursor:pointer;
-  background:#222;
-}
-
-.tab.active{
-  background:#4CAF50;
-}
-
-.container{
-  padding:16px;
-  max-width:500px;
-  margin:auto;
-}
-
-.card{
-  background:#1e1e1e;
-  padding:16px;
-  border-radius:16px;
-  margin-bottom:16px;
-}
-
-input[type=number]{
-  width:100%;
-  padding:14px;
-  font-size:18px;
-  border-radius:10px;
-  border:none;
-  margin-top:8px;
-  text-align:center;
-}
-
-button{
-  width:100%;
-  padding:14px;
-  font-size:16px;
-  border:none;
-  border-radius:12px;
-  margin-top:10px;
-  background:#4CAF50;
-  color:white;
-}
-
-.result{
-  margin-top:16px;
-  white-space:pre-line;
   font-weight:bold;
 }
-
-.hidden{display:none;}
-label{display:block;margin-bottom:10px;}
+.tab.active{
+  background:#333;
+  color:#fff;
+}
+.section{
+  display:none;
+  background:#fff;
+  padding:12px;
+  border-radius:6px;
+}
+.section.active{display:block;}
+.result{
+  margin-top:12px;
+  font-size:16px;
+  line-height:1.6;
+  white-space:pre-line;
+}
 </style>
 </head>
-
 <body>
 
-<header>シール業務ツール</header>
+<h2>合計枚数</h2>
+<input type="number" id="totalInput" min="0" placeholder="枚数を入力">
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab(0)">サイズシール</div>
-  <div class="tab" onclick="switchTab(1)">44枚シート</div>
+  <div class="tab active" data-target="sizeSection">サイズシール</div>
+  <div class="tab" data-target="sheetSection">44枚シート</div>
 </div>
 
-<div class="container">
-
-<!-- サイズシール -->
-<div id="app0">
-
-<div class="card">
-<input type="number" id="num" placeholder="枚数を入力">
-<button onclick="calc()">計算する</button>
-<button onclick="resetCalc()">リセット</button>
-<div class="result" id="result"></div>
+<!-- サイズ -->
+<div id="sizeSection" class="section active">
+  <label><input type="radio" name="sizeMode" value="normal" checked> 通常計算</label><br>
+  <label><input type="radio" name="sizeMode" value="70"> 70枚セット</label><br>
+  <label><input type="radio" name="sizeMode" value="80"> 80枚セット</label><br>
+  <label>
+    <input type="radio" name="sizeMode" value="custom">
+    <input type="number" id="sizeCustom" min="1" style="width:80px;"> 枚セット
+  </label>
+  <div class="result" id="sizeResult"></div>
 </div>
 
-<div class="card">
-<label><input type="checkbox" id="mode80" checked onclick="setMode('80')">80枚で区切る</label>
-<label><input type="checkbox" id="mode70" onclick="setMode('70')">70枚で区切る</label>
-<label><input type="checkbox" id="modeCustom" onclick="setMode('custom')">カスタム束</label>
-<input type="number" id="customSize" placeholder="例:50や100">
-</div>
-
-</div>
-
-<!-- 44枚シート -->
-<div id="app1" class="hidden">
-
-<div class="card">
-<input type="number" id="sheetTotal" placeholder="枚数を入力">
-<button onclick="calcSheet()">計算する</button>
-<div class="result" id="sheetResult"></div>
-</div>
-
-<div class="card">
-<label><input type="radio" name="sheetMode" value="100" checked>100枚で区切る</label>
-<label><input type="radio" name="sheetMode" value="custom">カスタム束</label>
-<input type="number" id="sheetCustom" placeholder="束枚数">
-</div>
-
-</div>
-
+<!-- 44 -->
+<div id="sheetSection" class="section">
+  <label><input type="radio" name="sheetMode" value="normal" checked> 通常（44単位）</label><br>
+  <label><input type="radio" name="sheetMode" value="70"> 70枚セット</label><br>
+  <label><input type="radio" name="sheetMode" value="80"> 80枚セット</label><br>
+  <label>
+    <input type="radio" name="sheetMode" value="custom">
+    <input type="number" id="sheetCustom" min="1" style="width:80px;"> 枚セット
+  </label>
+  <div class="result" id="sheetResult"></div>
 </div>
 
 <script>
-
-// タブ切替
-function switchTab(index){
-  document.querySelectorAll(".tab").forEach((t,i)=>{
-    t.classList.toggle("active",i===index);
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.target).classList.add("active");
   });
-  document.getElementById("app0").classList.toggle("hidden",index!==0);
-  document.getElementById("app1").classList.toggle("hidden",index!==1);
-}
+});
 
-//////////////////////////
-// サイズシール（完全版）
-//////////////////////////
+document.querySelectorAll("input").forEach(el=>{
+  el.addEventListener("input",calculate);
+  el.addEventListener("change",calculate);
+});
 
-function setMode(mode){
-  document.getElementById("mode80").checked = (mode==='80');
-  document.getElementById("mode70").checked = (mode==='70');
-  document.getElementById("modeCustom").checked = (mode==='custom');
-}
-
-function normalDivide(num){
-  let result="";
-  let blocks=Math.floor(num/42);
-  let remainder=num%42;
-
-  if(blocks>0){
-    result+="42枚セット × "+blocks+"\n";
-  }
-
-  if(remainder>0){
-    let rows=Math.floor(remainder/7);
-    let used=rows*7;
-    let leftover=remainder-used;
-
-    if(rows>0){
-      result+=rows+"段（"+used+"枚）";
-      if(leftover>0){
-        result+=" 余り "+leftover+"枚 (合計"+remainder+"枚)";
-      }else{
-        result+=" (合計"+remainder+"枚)";
-      }
-    }else{
-      result+="余り "+remainder+"枚";
-    }
-  }
-
-  return result.trim();
-}
-
-function customBundleDivide(total,bundleSize){
-
-  if(total<=bundleSize){
-    return normalDivide(total);
-  }
-
-  let result="";
-  let blocks=Math.floor(total/bundleSize);
-  let remainder=total%bundleSize;
-
-  for(let i=0;i<blocks;i++){
-
-    let inside="";
-    let remain=bundleSize;
-
-    let sheet42=Math.floor(remain/42);
-    remain=remain%42;
-
-    if(sheet42>0){
-      inside+="42枚セット × "+sheet42;
-    }
-
-    if(remain>0){
-      let rows=Math.floor(remain/7);
-      let used=rows*7;
-      let leftover=remain-used;
-
-      if(rows>0){
-        inside+=" + "+rows+"段（"+used+"枚）";
-        if(leftover>0){
-          inside+=" 余り "+leftover+"枚";
-        }
-      }else{
-        inside+=" + 余り "+remain+"枚";
-      }
-    }
-
-    result+=inside+" (合計"+bundleSize+"枚)\n";
-  }
-
-  if(remainder>0){
-    result+=normalDivide(remainder);
-  }
-
-  return result.trim();
-}
-
-function calc(){
-
-  let total=parseInt(document.getElementById("num").value);
-
-  if(isNaN(total)||total<=0){
-    document.getElementById("result").innerText="正しい枚数を入力してください";
+function calculate(){
+  const total = parseInt(document.getElementById("totalInput").value);
+  if(!total || total<=0){
+    sizeResult.textContent="";
+    sheetResult.textContent="";
     return;
   }
+  calculateSize(total);
+  calculateSheet(total);
+}
 
-  if(document.getElementById("mode80").checked){
-    document.getElementById("result").innerText=
-      customBundleDivide(total,80);
-    return;
-  }
+/* =========================
+   サイズ計算
+========================= */
+function calculateSize(total){
+  const mode=document.querySelector('input[name="sizeMode"]:checked').value;
+  const result=document.getElementById("sizeResult");
+  result.textContent="";
 
-  if(document.getElementById("mode70").checked){
-    document.getElementById("result").innerText=
-      customBundleDivide(total,70);
-    return;
-  }
-
-  if(document.getElementById("modeCustom").checked){
-    let customSize=parseInt(document.getElementById("customSize").value);
-    if(isNaN(customSize)||customSize<=0){
-      document.getElementById("result").innerText="カスタム束サイズを入力してください";
+  if(mode==="normal"){
+    let n=total;
+    if(n%6===0){
+      result.textContent=(n/6)+"列";
       return;
     }
-    document.getElementById("result").innerText=
-      customBundleDivide(total,customSize);
-    return;
+    result.textContent=sizeDecomposeBlock(n,false);
   }
+  else{
+    let setSize=mode==="70"?70:mode==="80"?80:parseInt(sizeCustom.value);
+    if(!setSize) return;
 
-  document.getElementById("result").innerText=
-    normalDivide(total);
-}
+    let setCount=Math.floor(total/setSize);
+    let rest=total%setSize;
 
-function resetCalc(){
-  document.getElementById("num").value="";
-  document.getElementById("result").innerText="";
-}
+    if(setCount>0){
+      let line=sizeDecomposeInline(setSize,setSize);
+      if(setCount>1) line+=" ×"+setCount;
+      result.textContent=line;
 
-//////////////////////////
-// 44枚シート（完成版）
-//////////////////////////
-
-function breakdown(amount){
-  const SHEET=44;
-  const ROW=4;
-
-  let result="";
-  const sheets=Math.floor(amount/SHEET);
-  let rem=amount%SHEET;
-
-  if(sheets>0) result+="44枚セット × "+sheets;
-
-  if(rem>0){
-    const rows=Math.floor(rem/ROW);
-    const last=rem%ROW;
-
-    if(rows>0){
-      if(result) result+=" + ";
-      result+=rows+"段("+rows*4+"枚)";
-    }
-    if(last>0){
-      if(result) result+=" + ";
-      result+="余り"+last+"枚";
+      if(rest>0){
+        result.textContent+="\n"+sizeDecomposeInline(rest,null);
+      }
+    }else{
+      // ★ 修正ポイント：セット未満でも1行表示
+      result.textContent=sizeDecomposeInline(total,null);
     }
   }
-  return result;
 }
 
-function calcSheet(){
+function sizeDecomposeBlock(n){
+  let set42=Math.floor(n/42); n%=42;
+  let dan=Math.floor(n/7); n%=7;
+  let col=Math.floor(n/6); n%=6;
 
-  const total=parseInt(document.getElementById("sheetTotal").value);
-  if(!total) return;
-
-  let mode=document.querySelector("input[name='sheetMode']:checked").value;
-  let bundle=100;
-
-  if(mode==="custom"){
-    bundle=parseInt(document.getElementById("sheetCustom").value);
-    if(!bundle) return;
-  }
-
-  const sets=Math.floor(total/bundle);
-  const remain=total%bundle;
-
-  let text="";
-
-  for(let i=0;i<sets;i++){
-    text+=breakdown(bundle)+" (合計"+bundle+"枚)\n\n";
-  }
-
-  if(remain>0){
-    text+=breakdown(remain)+" (合計"+remain+"枚)";
-  }
-
-  document.getElementById("sheetResult").innerText=text;
+  let lines=[];
+  if(set42) lines.push("42枚セット ×"+set42);
+  if(dan) lines.push(dan+"段");
+  if(col) lines.push(col+"列");
+  if(n) lines.push("余り"+n+"枚");
+  return lines.join("\n");
 }
 
+function sizeDecomposeInline(n,setLabel){
+  let original=n;
+  let set42=Math.floor(n/42); n%=42;
+  let dan=Math.floor(n/7); n%=7;
+  let col=Math.floor(n/6); n%=6;
+
+  let parts=[];
+  if(set42) parts.push("42枚セット ×"+set42);
+  if(dan) parts.push(dan+"段("+dan*7+"枚)");
+  if(col) parts.push(col+"列("+col*6+"枚)");
+  if(n) parts.push("余り"+n+"枚");
+
+  let line=parts.join(" + ");
+  if(setLabel) line+="（"+setLabel+"枚セット）";
+  return line;
+}
+
+/* =========================
+   44枚シート計算
+========================= */
+function calculateSheet(total){
+  const mode=document.querySelector('input[name="sheetMode"]:checked').value;
+  const result=document.getElementById("sheetResult");
+  result.textContent="";
+
+  if(mode==="normal"){
+    result.textContent=sheetDecomposeBlock(total);
+  }
+  else{
+    let setSize=mode==="70"?70:mode==="80"?80:parseInt(sheetCustom.value);
+    if(!setSize) return;
+
+    let setCount=Math.floor(total/setSize);
+    let rest=total%setSize;
+
+    if(setCount>0){
+      let line=sheetDecomposeInline(setSize,setSize);
+      if(setCount>1) line+=" ×"+setCount;
+      result.textContent=line;
+
+      if(rest>0){
+        result.textContent+="\n"+sheetDecomposeInline(rest,null);
+      }
+    }else{
+      // ★ 修正ポイント：セット未満でも1行表示
+      result.textContent=sheetDecomposeInline(total,null);
+    }
+  }
+}
+
+function sheetDecomposeBlock(n){
+  let sheet=Math.floor(n/44); n%=44;
+  let dan=Math.floor(n/4); n%=4;
+
+  let lines=[];
+  if(sheet) lines.push("44枚シート ×"+sheet);
+  if(dan) lines.push(dan+"段("+dan*4+"枚)");
+  if(n) lines.push("余り"+n+"枚");
+  return lines.join("\n");
+}
+
+function sheetDecomposeInline(n,setLabel){
+  let sheet=Math.floor(n/44); n%=44;
+  let dan=Math.floor(n/4); n%=4;
+
+  let parts=[];
+  if(sheet) parts.push("44枚シート ×"+sheet);
+  if(dan) parts.push(dan+"段("+dan*4+"枚)");
+  if(n) parts.push("余り"+n+"枚");
+
+  let line=parts.join(" + ");
+  if(setLabel) line+="（"+setLabel+"枚セット）";
+  return line;
+}
 </script>
 
 </body>
